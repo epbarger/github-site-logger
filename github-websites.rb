@@ -1,6 +1,7 @@
 require 'net/http'
 require 'uri'
 require 'json'
+require 'pry'
 
 module ApiRequest
   TOKEN = ENV["GITHUB_WEBSITE_TOKEN"].freeze
@@ -16,33 +17,9 @@ module ApiRequest
       http.request(request)
     end
 
-    raise 'somethings not right with github api' if response.code.to_i >= 300
+    raise 'somethings fucky' if response.code.to_i >= 300
 
     JSON.parse(response.body)
-  end
-end
-
-class GetOrganizations
-  include ApiRequest
-
-  QUERY = "
-    query { 
-      viewer { 
-        organizations(first: 100){
-          edges{
-            node{
-              login
-            }
-          }
-        }
-      }
-    }
-  ".freeze
-
-  def all_organizations
-    data = request_data(QUERY)
-    organizations = data["data"]["viewer"]["organizations"]["edges"].map { |node| node["node"] }
-    organizations.map { |organization| organization["login"] }
   end
 end
 
@@ -75,6 +52,7 @@ class GetWebsitesFromFollowers
         puts "#{member['login']} - #{websiteUrl}"
       end
     end
+    puts
   end
 end
 
@@ -107,27 +85,27 @@ class GetWebsitesFromFollowing
         puts "#{member['login']} - #{websiteUrl}"
       end
     end
+    puts
   end
 end
 
-class GetWebsitesFromOrganization
+class GetWebsitesFromOrganizations
   include ApiRequest
 
   QUERY = "
     query { 
       viewer { 
-        organization(login: \"[ORG]\"){
-          id
-          websiteUrl
-          login
-          name
-          url
-          avatarUrl
-          members(first: 100){
-            edges{
-              node{
-                websiteUrl
-                login
+        organizations(first: 100){
+          edges{
+            node{
+              login
+              members(first: 100){
+                edges{
+                  node{
+                    websiteUrl
+                    login
+                  }
+                }
               }
             }
           }
@@ -136,24 +114,22 @@ class GetWebsitesFromOrganization
     }
   ".freeze
 
-  attr_reader :organization_login
-
-  def initialize(organization_login)
-    @organization_login = organization_login
-  end
-
   def print_websites
-    data = request_data(QUERY.sub("[ORG]", organization_login))
-    organization = data["data"]["viewer"]["organization"]
-    puts "Organization: #{organization['login']}"
-    puts "=" * 50
-    members = organization["members"]["edges"].map { |node| node["node"] }
-    members.each do |member|
-      websiteUrl = member["websiteUrl"]
-      if websiteUrl.to_s.length > 0
-        puts "#{member['login']} - #{websiteUrl}"
+    data = request_data(QUERY)
+    organizations = data["data"]["viewer"]["organizations"]["edges"].map { |node| node["node"] }
+    organizations.each do |organization|
+      puts "Organization: #{organization['login']}"
+      puts "=" * 50
+      members = organization["members"]["edges"].map { |node| node["node"] }
+      members.each do |member|
+        websiteUrl = member["websiteUrl"]
+        if websiteUrl.to_s.length > 0
+          puts "#{member['login']} - #{websiteUrl}"
+        end
       end
+      puts
     end
+    puts
   end
 end
 
@@ -161,14 +137,8 @@ class GithubWebsites
   class << self
     def run
       GetWebsitesFromFollowing.new.print_websites
-      puts
       GetWebsitesFromFollowers.new.print_websites
-      puts
-      organizations = GetOrganizations.new.all_organizations
-      organizations.each do |organization|
-        GetWebsitesFromOrganization.new(organization).print_websites
-        puts
-      end
+      GetWebsitesFromOrganizations.new.print_websites
     end
   end
 end
