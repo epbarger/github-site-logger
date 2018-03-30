@@ -31,9 +31,7 @@ class GetOrganizations
         organizations(first: 100){
           edges{
             node{
-              id
               login
-              name
             }
           }
         }
@@ -46,17 +44,6 @@ class GetOrganizations
     organizations = data["data"]["viewer"]["organizations"]["edges"].map { |node| node["node"] }
     organizations.map { |organization| organization["login"] }
   end
-
-  # def print_and_ask
-  #   data = request_data(QUERY)
-  #   organizations = data["data"]["viewer"]["organizations"]["edges"].map { |node| node["node"] }
-  #   organizations.each_with_index do |organization, i|
-  #     puts "#{i+1} - #{organization['login']}"
-  #   end
-  #   print "Enter index: "
-  #   i = gets.strip.to_i - 1
-  #   organizations[i]["login"]
-  # end
 end
 
 class GetWebsitesFromFollowers
@@ -68,10 +55,8 @@ class GetWebsitesFromFollowers
         followers(first: 100){
           edges{
             node{
-              id
-              login
-              name
               websiteUrl
+              login
             }
           }
         }
@@ -102,10 +87,8 @@ class GetWebsitesFromFollowing
         following(first: 100){
           edges{
             node{
-              id
-              login
-              name
               websiteUrl
+              login
             }
           }
         }
@@ -143,12 +126,8 @@ class GetWebsitesFromOrganization
           members(first: 100){
             edges{
               node{
-                id
                 websiteUrl
                 login
-                name
-                url
-                avatarUrl
               }
             }
           }
