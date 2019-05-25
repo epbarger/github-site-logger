@@ -3,7 +3,7 @@ require 'uri'
 require 'json'
 
 module ApiRequest
-  TOKEN = ENV["GITHUB_WEBSITE_TOKEN"].freeze
+  TOKEN = ENV["GITHUB_TOKEN"].freeze
 
   def request_data(graphql_query)
     uri = URI.parse("https://api.github.com/graphql")
@@ -98,7 +98,7 @@ class GetWebsitesFromOrganizations
           edges{
             node{
               login
-              members(first: 100){
+              membersWithRole(first: 100){
                 edges{
                   node{
                     websiteUrl
@@ -119,7 +119,7 @@ class GetWebsitesFromOrganizations
     organizations.each do |organization|
       puts "Organization: #{organization['login']}"
       puts "=" * 50
-      members = organization["members"]["edges"].map { |node| node["node"] }
+      members = organization["membersWithRole"]["edges"].map { |node| node["node"] }
       members.each do |member|
         websiteUrl = member["websiteUrl"]
         if websiteUrl.to_s.length > 0
